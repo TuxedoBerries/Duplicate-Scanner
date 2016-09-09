@@ -1,0 +1,11 @@
+# Ignore OSX
+.DS_Store
+
+# Ignore generated
+*.jar
+/target
+
+# Ignore IDE stuff
+.classpath
+.project
+.settings
