@@ -1,3 +1,8 @@
+/**
+ * Author:	Juan Silva <juan.silva@giantparticle.com>
+ * Date:	September 09, 2016
+ * Copyright (c) Giant Particle All rights reserved.
+ */
 package com.giantparticle.duplicatescanner;
 
 import java.io.File;
@@ -6,6 +11,9 @@ import java.util.List;
 
 import com.giantparticle.duplicatescanner.cli.ICLIOptions;
 
+/**
+ * Adds MD5 hashes to a given hash map based on a given file list.
+ */
 public class FileListHashGenerator implements Runnable {
 
 	private HashGenerator hashGenerator;
@@ -14,7 +22,10 @@ public class FileListHashGenerator implements Runnable {
 	private int endIndex;
 	private HashMap<String, FileData> fileMap;
 	private ICLIOptions options;
-	
+
+	/**
+	 * Empty constructor
+	 */
 	public FileListHashGenerator() {
 		hashGenerator = new HashGenerator();
 	}
@@ -27,15 +38,32 @@ public class FileListHashGenerator implements Runnable {
 	public void setOptions(ICLIOptions options) {
 		this.options = options;
 	}
-	
+
+	/**
+	 * Sets the hash map where to add all the MD5 hashes
+	 * 
+	 * @param map MD5 hash map
+	 */
 	public void setFileMap(HashMap<String, FileData> map) {
 		fileMap = map;
 	}
 
+	/**
+	 * Set a list of files to calculate the MD5 hashes
+	 * 
+	 * @param list list of files
+	 */
 	public void setFileList(List<File> list) {
 		setFileList(list, 0, list.size());
 	}
 
+	/**
+	 * Set a list of files to calculate the MD5 hashes.
+	 * 
+	 * @param list list of files
+	 * @param start starting index
+	 * @param end end index
+	 */
 	public void setFileList(List<File> list, int start, int end) {
 		fileList = list;
 		startIndex = start;
