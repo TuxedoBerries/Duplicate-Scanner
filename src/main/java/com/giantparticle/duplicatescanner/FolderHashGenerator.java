@@ -6,7 +6,9 @@
 package com.giantparticle.duplicatescanner;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import com.giantparticle.duplicatescanner.cli.ICLIOptions;
 
@@ -15,18 +17,17 @@ import com.giantparticle.duplicatescanner.cli.ICLIOptions;
  */
 public class FolderHashGenerator {
 
-	private final HashGenerator hashGenerator;
 	private ICLIOptions options;
 
 	/**
 	 * Empty constructor
 	 */
 	public FolderHashGenerator() {
-		hashGenerator = new HashGenerator();
 	}
 
 	/**
 	 * Set the options for this generator
+	 * 
 	 * @param options
 	 */
 	public void setOptions(ICLIOptions options) {
@@ -34,43 +35,75 @@ public class FolderHashGenerator {
 	}
 
 	/**
-	 * Return a HashMap with an MD5 string hash as key and FileData as values for all the files inside the given folder.
-	 * @param source Source folder where to scan all the files
+	 * Return a HashMap with an MD5 string hash as key and FileData as values
+	 * for all the files inside the given folder.
+	 * 
+	 * @param source
+	 *            Source folder where to scan all the files
 	 * @return HashMap as MD5 string and File Data
 	 */
 	public HashMap<String, FileData> Generate(String source) {
 		HashMap<String, FileData> map = new HashMap<>();
-		AddFiles(source, map);
+		List<File> fileList = getAllFiles(source);
+		if (options.useThreads()) {
+			List<Thread> threadList = new ArrayList<>();
+			int start = 0;
+			int delta = (fileList.size() / options.threadCount());
+			// TODO: Fix Delta
+			System.out.println(String.format("Threads: %d", options.threadCount()));
+			for (int i = 0; i < options.threadCount(); ++i) {
+				FileListHashGenerator generator = new FileListHashGenerator();
+				generator.setOptions(options);
+				int end = start + delta;
+				if (i + 1 >= options.threadCount())
+					end = fileList.size();
+				generator.setFileList(fileList, start, end);
+				generator.setFileMap(map);
+
+				System.out.println(String.format("Thread[%d]: [%d - %d]", i, start, end));
+				Thread thread = new Thread(generator);
+				threadList.add(thread);
+				start += delta;
+			}
+
+			// Start
+			for (int i = 0; i < threadList.size(); ++i) {
+				threadList.get(i).start();
+			}
+
+			try {
+				for (int i = 0; i < threadList.size(); ++i) {
+					threadList.get(i).join();
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		} else {
+			FileListHashGenerator generator = new FileListHashGenerator();
+			generator.setOptions(options);
+			generator.setFileList(fileList);
+			generator.setFileMap(map);
+			generator.run();
+		}
 		return map;
 	}
 
-	private void AddFiles(String source, HashMap<String, FileData> map) {
+	private List<File> getAllFiles(String source) {
+		List<File> list = new ArrayList<>();
+		addAllFiles(source, list);
+		return list;
+	}
+
+	private void addAllFiles(String source, List<File> list) {
 		File root = new File(source);
 		File[] files = root.listFiles();
 		for (int i = 0; i < files.length; ++i) {
 			File file = files[i];
 			if (file.isFile()) {
-				String md5 = hashGenerator.GenerateMD5String(file.getPath());
-				if (md5 == null || md5.isEmpty())
-					continue;
-
-				// Print or no Print
-				if (!this.options.isSilent()) {
-					System.out.println(String.format("File: %s - %s", md5, file.getPath()));
-				}
-
-				if (map.containsKey(md5)) {
-					map.get(md5).FilePaths.add(file.getPath());
-				} else {
-					FileData data = new FileData();
-					data.FilePaths.add(file.getPath());
-					data.MD5Hash = md5;
-
-					map.put(md5, data);
-				}
+				list.add(file);
 			}
 			if (file.isDirectory()) {
-				AddFiles(file.getPath(), map);
+				addAllFiles(file.getPath(), list);
 			}
 		}
 	}

@@ -23,10 +23,13 @@ public class CLIOptions implements ICLIOptions {
 	private static final String DELETE_LONG = "delete";
 	private static final String MOVE_LONG = "move";
 	private static final String SILENT_LONG = "silent";
+	private static final String THREAD_LONG = "thread";
 	private static final String HELP_SHORT = "h";
 	private static final String DELETE_SHORT = "d";
 	private static final String MOVE_SHORT = "m";
 	private static final String SILENT_SHORT = "s";
+	private static final String THREAD_SHORT = "t";
+	private static final String THREAD_COUNT_LONG = "thread count";
 	private static final String MOVE_FOLDER = "folder";
 
 	private static final String SYNTAX = "dscanner <SOURCE FOLDER>";
@@ -40,6 +43,8 @@ public class CLIOptions implements ICLIOptions {
 	private boolean moveFiles = false;
 	private String moveFolder = null;
 	private boolean silent = false;
+	private boolean threads = false;
+	private int threadCount = 2;
 
 	/**
 	 * Main constructor
@@ -50,7 +55,11 @@ public class CLIOptions implements ICLIOptions {
 		Option help = new Option(HELP_SHORT, HELP_LONG, false, "Print this message.");
 		// Add Silent
 		Option silent = new Option(SILENT_SHORT, SILENT_LONG, false, "Do not print each file scanned.");
+		Option thread = new Option(THREAD_SHORT, THREAD_LONG, true, "Use threads to improve the speed.");
+		thread.setOptionalArg(true);
+		thread.setArgName(THREAD_COUNT_LONG);
 
+		// Action group
 		OptionGroup group = new OptionGroup();
 		// Add Delete
 		Option delete = new Option(DELETE_SHORT, DELETE_LONG, false, "Delete duplicated files (Keep the first file).");
@@ -64,6 +73,7 @@ public class CLIOptions implements ICLIOptions {
 		// Add all options
 		options.addOption(help);
 		options.addOption(silent);
+		options.addOption(thread);
 		options.addOptionGroup(group);
 	}
 
@@ -78,7 +88,9 @@ public class CLIOptions implements ICLIOptions {
 
 	/**
 	 * Consume the command line arguments in order to generate the proper data.
-	 * @param args command line arguments.
+	 * 
+	 * @param args
+	 *            command line arguments.
 	 */
 	public void consumeArguments(String[] args) {
 		CommandLineParser parser = new DefaultParser();
@@ -101,6 +113,21 @@ public class CLIOptions implements ICLIOptions {
 
 		if (cmd.hasOption(DELETE_SHORT) || cmd.hasOption(DELETE_LONG)) {
 			deleteFiles = true;
+		}
+
+		if (cmd.hasOption(THREAD_SHORT)) {
+			threads = true;
+			String threadOption = cmd.getOptionValue(THREAD_SHORT);
+			if (threadOption != null && !threadOption.isEmpty()) {
+				threadCount = Integer.parseInt(threadOption);
+			}
+		}
+		if (cmd.hasOption(THREAD_LONG)) {
+			threads = true;
+			String threadOption = cmd.getOptionValue(THREAD_LONG);
+			if (threadOption != null && !threadOption.isEmpty()) {
+				threadCount = Integer.parseInt(threadOption);
+			}
 		}
 
 		if (cmd.hasOption(MOVE_SHORT)) {
@@ -145,5 +172,13 @@ public class CLIOptions implements ICLIOptions {
 
 	public boolean isSilent() {
 		return silent;
+	}
+
+	public boolean useThreads() {
+		return threads;
+	}
+
+	public int threadCount() {
+		return threadCount;
 	}
 }
